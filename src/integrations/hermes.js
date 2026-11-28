@@ -12,6 +12,8 @@ const { HUB_URL } = require('../installed');
 const { which, runShim } = require('./util');
 
 const HUB = `${HUB_URL}/v1`;
+// An agent turn carries tools, skills and history: Hermes only gets models with this much context.
+const MIN_CONTEXT = 200000;
 
 const MERGE = String.raw`
 import datetime, json, os, shutil, sys
@@ -101,13 +103,20 @@ function installHermes() {
   }
 }
 
+// The installed models Hermes can use: those that keep at least MIN_CONTEXT tokens of context.
+function agentModels(models) {
+  return models.filter(m => m.context >= MIN_CONTEXT);
+}
+
 function detect() {
   return true; // Offered on every install: the installer can set Hermes up from scratch.
 }
 
 // models: installed models, most capable first (see installed.js).
-async function configure({ models, yes, refresh = false }) {
+async function configure({ models: installed, yes, refresh = false }) {
   ui.step('Hermes');
+  const models = agentModels(installed);
+  if (!models.length) { ui.todo(`Hermes needs a model with at least ${MIN_CONTEXT.toLocaleString('en-US')} tokens of context; install saias-flash.`); return; }
   // saias-smart answers fastest among the capable profiles: the everyday default for an agent.
   const defaultModel = (models.find(m => m.profile === 'smart') || models[0]).id;
   let hermes = which('hermes');
@@ -173,4 +182,4 @@ function remove() {
   }
 }
 
-module.exports = { id: 'hermes', name: 'Hermes Agent', detect, configure, remove, configured };
+module.exports = { id: 'hermes', name: 'Hermes Agent', detect, configure, remove, configured, agentModels, MIN_CONTEXT };

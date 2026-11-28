@@ -144,10 +144,22 @@ test('a placement with a smaller context passes it to llama-server', () => {
 });
 
 test('the catalog context floors are valid', () => {
-  for (const variant of catalog.profiles.flash.variants) assert.equal(variant.contextFloor, 32768);
+  // Flash is the Hermes model: never below 200,000 tokens. Omni: never below 20,000.
+  for (const variant of catalog.profiles.flash.variants) assert.equal(variant.contextFloor, 200000);
+  for (const variant of catalog.profiles.omni.variants) assert.equal(variant.contextFloor, 20000);
+  assert.deepEqual(placement.smallerContexts(262144, 200000), [200000]);
+  assert.deepEqual(placement.smallerContexts(32768, 20000), [20000]);
   const broken = structuredClone(catalog);
   broken.profiles.flash.variants[0].contextFloor = 10 ** 9;
   assert.throws(() => catalogs.validate(broken), /contextFloor/);
+});
+
+test('Hermes only gets the models with at least 200,000 tokens of context', () => {
+  const hermes = require('../src/integrations/hermes');
+  const models = [{ id: 'saias-flash', context: 200000 }, { id: 'saias-omni', context: 32768 }, { id: 'saias-smart', context: 200000 }];
+  assert.equal(hermes.MIN_CONTEXT, 200000);
+  assert.deepEqual(hermes.agentModels(models).map(m => m.id), ['saias-flash', 'saias-smart']);
+  assert.deepEqual(hermes.agentModels([{ id: 'saias-flash', context: 32768 }]), []);
 });
 
 test('the test image is a valid PNG', () => {

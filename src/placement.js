@@ -380,7 +380,7 @@ async function plan({ exe, alias, variant, files, template, mmprojBytes, logDir,
       ...(o.m.imageSeconds !== undefined ? { imageSeconds: round(o.m.imageSeconds) } : {}),
     },
   }));
-  return select({ signature: signature(devices), date: new Date().toISOString().slice(0, 10), options: stored, auto }, 'auto');
+  return select({ signature: signature(devices), floor: variant.contextFloor ?? null, date: new Date().toISOString().slice(0, 10), options: stored, auto }, 'auto');
 }
 
 module.exports = {

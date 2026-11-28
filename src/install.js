@@ -128,7 +128,8 @@ async function placeProfile(state, r, dir, previous, { force = false } = {}) {
   const name = profileName(r.profile);
   const exe = store.binaryPath(dir, r.runtime);
   const kept = previous?.placement;
-  if (!force && kept && previous.variant === r.variant.id && kept.signature === placement.signature(llama.listDevices(exe))) {
+  if (!force && kept && previous.variant === r.variant.id && kept.signature === placement.signature(llama.listDevices(exe))
+    && (kept.floor ?? null) === (r.variant.contextFloor ?? null)) {
     ui.ok(`${name} runs on ${kept.summary}`);
     return { placement: kept };
   }
